@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 Alberto P.
+# SPDX-License-Identifier: MPL-2.0
+name: weekly
+# Weekly check that the build still works against the current vendor package.
+# After 3 consecutive failed scheduled runs (the current one + the 2 before it)
+# an issue is opened and this workflow disables itself. Re-enable it from the
+# Actions tab once fixed. (GitHub also pauses schedules after 60 days of repo
+# inactivity.)
+on:
+  workflow_dispatch:
+  schedule: [{cron: '0 6 * * 1'}]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./build.sh
+      - run: ./test.sh
+  on-failure:
+    needs: check
+    if: ${{ always() && needs.check.result == 'failure' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Block after repeated failures
+        run: |
+          # Previous completed scheduled runs of this workflow, newest first.
+          prev=$(gh api "repos/$GH_REPO/actions/workflows/weekly.yml/runs?event=schedule&status=completed&per_page=2" \
+                  --jq '[.workflow_runs[].conclusion] | join(",")')
+          echo "previous conclusions: $prev"
+          [ "$prev" = "failure,failure" ] || exit 0
+          gh label create build-broken --color B60205 --description "Weekly build failing" 2>/dev/null || true
+          if [ -z "$(gh issue list --label build-broken --state open --json number --jq '.[0].number')" ]; then
+            gh issue create --label build-broken \
+              --title "Weekly build failed 3 times in a row; weekly check disabled" \
+              --body "The scheduled build failed 3 consecutive times (latest: $GITHUB_SERVER_URL/$GH_REPO/actions/runs/$GITHUB_RUN_ID). Most likely the vendor package or its layout changed, or a pinned dependency broke. The weekly workflow has been disabled; fix the build and re-enable it from the Actions tab, then close this issue."
+          fi
+          gh workflow disable weekly.yml

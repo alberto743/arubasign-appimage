@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ArubaSign
+GenericName=Digital Signature Client
+Comment=Aruba Firma Digitale
+Exec=AppRun %U
+Icon=arubasign
+Terminal=false
+StartupNotify=true
+Categories=Office;
+Keywords=firma;digitale;smartcard;signature;aruba;pec;

@@ -1,0 +1,9 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 Alberto P.
+# SPDX-License-Identifier: MPL-2.0
+#
+# AppImage entry point. Replaces the vendor launcher (arubasign.bat) and starts
+# the Electron binary directly. The Electron sandbox is disabled, as in the
+# vendor launcher: a SUID chrome-sandbox cannot live on an AppImage mount.
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/opt/arubasign/app/lin-x64/ArubaSign" --no-sandbox "$@"
