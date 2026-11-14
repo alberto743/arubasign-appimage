@@ -1,0 +1,32 @@
+name: update-deps
+# Keep linuxdeploy and its appimage plugin (pinned in versions.env) current.
+# Opens a PR; note PRs created with GITHUB_TOKEN do not trigger other workflows,
+# so run "build" manually on the PR branch (or use a PAT) before merging.
+on:
+  workflow_dispatch:
+  schedule: [{cron: '0 5 * * 1'}]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: scripts/update-deps.sh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Open PR if versions changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git diff --quiet versions.env && { echo "up to date"; exit 0; }
+          branch=chore/update-build-deps
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git commit -am "chore: update linuxdeploy build dependencies"
+          git push --force origin "$branch"
+          gh pr list --head "$branch" --json number --jq '.[0].number' | grep -q . \
+            || gh pr create --head "$branch" --title "chore: update linuxdeploy build dependencies" \
+                 --body "Automated bump of versions.env (new release + sha256)."

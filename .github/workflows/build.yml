@@ -1,0 +1,58 @@
+name: build
+
+# Lint on every push/PR; full build + test on demand and on PRs.
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: REUSE compliance
+        uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
+      - name: ShellCheck
+        run: shellcheck -x build.sh test.sh scripts/*.sh container/*.sh assets/AppRun
+      - name: actionlint
+        run: bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) && ./actionlint
+
+  build-test:
+    needs: lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: ./build.sh
+      - run: ./test.sh
+      # The AppImage contains Aruba's proprietary code (see docs/legal.md), so
+      # it is only kept as an artifact in a private repository, or when the
+      # redistribution approval flag is set.
+      - if: ${{ github.event.repository.private || vars.ARUBA_REDISTRIBUTION_APPROVED == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ArubaSign-AppImage
+          path: out/
+          retention-days: 3
+
+  publish:
+    # Disabled until Aruba has given written permission (docs/legal.md).
+    if: ${{ vars.ARUBA_REDISTRIBUTION_APPROVED == 'true' && github.event_name == 'workflow_dispatch' }}
+    needs: build-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ArubaSign-AppImage
+          path: out/
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v$(date +%Y%m%d)" out/* --notes "Unofficial AppImage repack of the vendor package."

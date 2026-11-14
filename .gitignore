@@ -1,0 +1,18 @@
+# Build products and caches (contain Aruba's proprietary code: never commit)
+/work/
+/cache/
+/out/
+/tools/
+*.AppImage
+*.AppImage.sha256
+*.rpm
+*.deb
+*.tar.zst
+squashfs-root/
+
+# Editor / OS noise
+*.swp
+*~
+.vscode/
+.idea/
+.DS_Store

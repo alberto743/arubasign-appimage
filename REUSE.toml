@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Alberto P.
+# SPDX-License-Identifier: MPL-2.0
+
+version = 1
+SPDX-PackageName = "arubasign-appimage"
+
+# Documentation, plain configuration and data files are licensed through this
+# file instead of per-file headers; scripts carry their own.
+[[annotations]]
+path = [
+  "README.md",
+  "docs/**",
+  ".gitignore",
+  ".editorconfig",
+  ".github/dependabot.yml",
+  ".github/workflows/*.yml",
+  "versions.env",
+  "assets/arubasign.desktop",
+  "assets/AppRun",
+]
+SPDX-FileCopyrightText = "2026 Alberto P."
+SPDX-License-Identifier = "MPL-2.0"
