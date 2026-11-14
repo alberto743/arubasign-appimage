@@ -16,9 +16,9 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: REUSE compliance
-        uses: fsfe/reuse-action@v5
+        uses: fsfe/reuse-action@v6
       - name: ShellCheck
         run: shellcheck -x build.sh test.sh scripts/*.sh container/*.sh assets/AppRun
       - name: actionlint
@@ -28,14 +28,14 @@ jobs:
     needs: lint
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: ./build.sh
       - run: ./test.sh
       # The AppImage contains Aruba's proprietary code (see docs/legal.md), so
       # it is only kept as an artifact in a private repository, or when the
       # redistribution approval flag is set.
       - if: ${{ github.event.repository.private || vars.ARUBA_REDISTRIBUTION_APPROVED == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ArubaSign-AppImage
           path: out/
@@ -49,8 +49,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ArubaSign-AppImage
           path: out/
